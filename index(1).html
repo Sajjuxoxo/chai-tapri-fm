@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chai Tapri FM</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;min-height:100%;background:#160b05}
+body{font-family:Georgia,serif;display:flex;justify-content:center;overflow-x:hidden}
+.radio{position:relative;width:min(1600px,100vw);aspect-ratio:1600/900;background:#160b05 center/cover no-repeat url("tapri-ui.png")}
+.hot{position:absolute;left:29.2%;top:29.4%;width:38%;height:41%;display:flex;align-items:center;justify-content:center}
+.player{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#2b170b}
+.now{font-weight:800;font-size:clamp(16px,2vw,30px);text-align:center;margin-top:-4%}
+.station{font-size:clamp(10px,1.15vw,18px);font-weight:700;color:#8c2f26;margin-top:5px}
+.time{position:absolute;left:9%;bottom:30%;font:700 clamp(9px,1vw,15px) monospace;color:#f1d39b}
+.total{position:absolute;right:9%;bottom:30%;font:700 clamp(9px,1vw,15px) monospace;color:#f1d39b}
+.seek{position:absolute;left:17%;right:17%;bottom:29.7%;height:7px;background:#8c5a25;border-radius:8px;cursor:pointer}
+.seek i{display:block;height:100%;width:0;background:#efbd69;border-radius:8px}
+.controls{position:absolute;left:12%;right:12%;bottom:10%;height:30%;display:flex;align-items:center;justify-content:space-between}
+.btn{border:0;background:transparent;color:#f7d99e;cursor:pointer;font-size:clamp(18px,2.3vw,36px);width:15%;height:70%;filter:drop-shadow(0 2px 2px #000)}
+.play{width:24%;height:90%;border-radius:50%;font-size:clamp(22px,3vw,48px);color:#26150b}
+.status{position:absolute;bottom:-14%;font:700 clamp(8px,.8vw,12px) monospace;color:#e8c48c;text-align:center;width:100%;text-shadow:0 1px 2px #000}
+.stationHit{position:absolute;left:15%;top:29%;width:14%;height:38%;cursor:pointer}
+@media(max-width:700px){.radio{min-width:700px;transform-origin:top center;transform:scale(calc(100vw / 700));height:calc(900px * 100vw / 700);aspect-ratio:auto}}
+</style>
+</head>
+<body>
+<div class="radio">
+  <div class="stationHit" title="Play 90s Chai Break"></div>
+
+  <div class="hot">
+    <div class="player">
+      <div class="now" id="title">Pe﻿hla Nasha</div>
+      <div class="station" id="station">90s Chai Break</div>
+      <div class="time" id="cur">0:00</div>
+      <div class="total" id="dur">0:00</div>
+      <div class="seek" id="seek"><i id="bar"></i></div>
+      <div class="controls">
+        <button class="btn" id="heart">♥</button>
+        <button class="btn" id="prev">⏮</button>
+        <button class="btn play" id="play">▶</button>
+        <button class="btn" id="next">⏭</button>
+        <button class="btn" id="shuffle">↻</button>
+      </div>
+      <div class="status" id="status">Direct MP3 radio · no YouTube · no video</div>
+    </div>
+  </div>
+</div>
+
+<audio id="audio" preload="metadata"></audio>
+
+<script>
+const tracks=[
+ {title:"Pehla Nasha",station:"90s Chai Break",file:"late-night-chai.mp3"},
+ {title:"Monsoon Yaadein",station:"Monsoon Yaadein",file:"monsoon-chai.mp3"},
+ {title:"Purani Yaadein",station:"Papa Ki Playlist",file:"purani-yaadein.mp3"},
+ {title:"Shaam Ki Tapri",station:"Late Night Tapri",file:"shaam-ki-tapri.mp3"},
+ {title:"Tapri Radio Theme",station:"90s Chai Break",file:"tapri-radio-theme.mp3"}
+];
+const a=document.getElementById("audio"),title=document.getElementById("title"),
+station=document.getElementById("station"),play=document.getElementById("play"),
+cur=document.getElementById("cur"),dur=document.getElementById("dur"),
+bar=document.getElementById("bar"),status=document.getElementById("status");
+let n=0,shuffle=false;
+
+function fmt(x){if(!isFinite(x))return"0:00";x=Math.floor(x);return Math.floor(x/60)+":"+String(x%60).padStart(2,"0")}
+function load(k,auto=false){
+ n=(k+tracks.length)%tracks.length;let t=tracks[n];
+ a.src=t.file;a.load();title.textContent=t.title;station.textContent=t.station;
+ status.textContent="Loading · direct MP3";
+ if(auto)a.play().catch(()=>status.textContent="Play dabao — browser ne autoplay roka hai.");
+}
+play.onclick=()=>a.paused?a.play().then(()=>status.textContent="Playing · direct MP3").catch(()=>status.textContent="MP3 load nahi hua"):a.pause();
+document.getElementById("prev").onclick=()=>load(n-1,true);
+document.getElementById("next").onclick=()=>load(shuffle?Math.floor(Math.random()*tracks.length):n+1,true);
+document.getElementById("shuffle").onclick=()=>{shuffle=!shuffle;status.textContent=shuffle?"Shuffle ON":"Shuffle OFF"};
+document.getElementById("heart").onclick=e=>{e.currentTarget.textContent=e.currentTarget.textContent==="♥"?"♡":"♥"};
+document.querySelector(".stationHit").onclick=()=>load(0,true);
+a.onplay=()=>play.textContent="Ⅱ";a.onpause=()=>play.textContent="▶";
+a.onended=()=>load(shuffle?Math.floor(Math.random()*tracks.length):n+1,true);
+a.onloadedmetadata=()=>dur.textContent=fmt(a.duration);
+a.ontimeupdate=()=>{cur.textContent=fmt(a.currentTime);bar.style.width=(a.duration?a.currentTime/a.duration*100:0)+"%"};
+a.onerror=()=>status.textContent="MP3 nahi mila: "+tracks[n].file;
+document.getElementById("seek").onclick=e=>{if(a.duration)a.currentTime=(e.offsetX/e.currentTarget.clientWidth)*a.duration};
+load(0,false);
+</script>
+</body>
+</html>
